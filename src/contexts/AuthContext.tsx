@@ -88,6 +88,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (data.user) {
         try {
           console.log('📡 Creating user profile...')
+          
+          // Coba insert langsung ke user_profiles
           const { error: profileError } = await supabase
             .from('user_profiles')
             .insert({
@@ -98,7 +100,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           if (profileError) {
             console.error('❌ Profile creation error:', profileError)
-            // Jangan return error karena user sudah terbuat
+            
+            // Jika gagal, coba panggil function manual
+            console.log('📡 Trying manual function...')
+            const { error: functionError } = await supabase.rpc('create_user_profile_manual', {
+              user_id: data.user.id,
+              user_full_name: fullName
+            })
+            
+            if (functionError) {
+              console.error('❌ Manual function error:', functionError)
+            } else {
+              console.log('✅ User profile created via manual function')
+            }
           } else {
             console.log('✅ User profile created successfully')
           }
