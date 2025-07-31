@@ -60,7 +60,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
+    console.log('🔍 Starting signup process...', { email, fullName })
+    
     try {
+      console.log('📡 Calling Supabase auth.signUp...')
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -72,14 +75,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
       })
       
+      console.log('📡 Supabase response:', { data, error })
+      
       if (error) {
-        console.error('SignUp error:', error)
+        console.error('❌ SignUp error:', error)
         return { error }
       }
+      
+      console.log('✅ Auth signup successful, user:', data.user?.id)
       
       // Jika signup berhasil, coba buat user profile manual
       if (data.user) {
         try {
+          console.log('📡 Creating user profile...')
           const { error: profileError } = await supabase
             .from('user_profiles')
             .insert({
@@ -89,17 +97,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             })
           
           if (profileError) {
-            console.error('Profile creation error:', profileError)
+            console.error('❌ Profile creation error:', profileError)
             // Jangan return error karena user sudah terbuat
+          } else {
+            console.log('✅ User profile created successfully')
           }
         } catch (profileErr) {
-          console.error('Profile creation exception:', profileErr)
+          console.error('❌ Profile creation exception:', profileErr)
         }
       }
       
+      console.log('✅ Signup process completed successfully')
       return { error: null }
     } catch (err) {
-      console.error('SignUp exception:', err)
+      console.error('❌ SignUp exception:', err)
       return { error: { message: 'Database error saving new user' } }
     }
   }
