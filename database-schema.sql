@@ -252,11 +252,11 @@ CREATE TRIGGER generate_order_number_trigger
 -- Insert sample products (only if table is empty)
 INSERT INTO products (name, description, price, image, category, stock, popular, delivery_time)
 SELECT * FROM (VALUES
-  ('Robux 100 (Via Login)', '100 Robux via login - Pengiriman instan ke akun Roblox Anda', 15000, 'https://via.placeholder.com/300x200/FF3B30/FFFFFF?text=100+Robux+Login', 'robux-login', 50, true, 'Instan'),
-  ('Robux 500 (Via Login)', '500 Robux via login - Pengiriman instan ke akun Roblox Anda', 75000, 'https://via.placeholder.com/300x200/007AFF/FFFFFF?text=500+Robux+Login', 'robux-login', 30, true, 'Instan'),
-  ('Robux 1000 (Via Login)', '1000 Robux via login - Pengiriman instan ke akun Roblox Anda', 150000, 'https://via.placeholder.com/300x200/34C759/FFFFFF?text=1000+Robux+Login', 'robux-login', 20, true, 'Instan'),
-  ('Robux 100 (Gamepass)', '100 Robux via gamepass - Delay 5 hari kerja', 12000, 'https://via.placeholder.com/300x200/FF3B30/FFFFFF?text=100+Robux+Gamepass', 'robux-gamepass', 100, false, '5 hari kerja'),
-  ('Joki Level 1-50', 'Joki leveling dari level 1 sampai 50 dengan joki profesional', 50000, 'https://via.placeholder.com/300x200/FFCC02/000000?text=Joki+Level+1-50', 'joki', 10, true, '1-2 hari')
+  ('Robux 100 (Via Login)', '100 Robux via login - Pengiriman instan ke akun Roblox Anda', 15000, 'https://via.placeholder.com/300x200/FF3B30/FFFFFF?text=100+Robux+Login', 'robux-login'::product_category, 50, true, 'Instan'),
+  ('Robux 500 (Via Login)', '500 Robux via login - Pengiriman instan ke akun Roblox Anda', 75000, 'https://via.placeholder.com/300x200/007AFF/FFFFFF?text=500+Robux+Login', 'robux-login'::product_category, 30, true, 'Instan'),
+  ('Robux 1000 (Via Login)', '1000 Robux via login - Pengiriman instan ke akun Roblox Anda', 150000, 'https://via.placeholder.com/300x200/34C759/FFFFFF?text=1000+Robux+Login', 'robux-login'::product_category, 20, true, 'Instan'),
+  ('Robux 100 (Gamepass)', '100 Robux via gamepass - Delay 5 hari kerja', 12000, 'https://via.placeholder.com/300x200/FF3B30/FFFFFF?text=100+Robux+Gamepass', 'robux-gamepass'::product_category, 100, false, '5 hari kerja'),
+  ('Joki Level 1-50', 'Joki leveling dari level 1 sampai 50 dengan joki profesional', 50000, 'https://via.placeholder.com/300x200/FFCC02/000000?text=Joki+Level+1-50', 'joki'::product_category, 10, true, '1-2 hari')
 ) AS v(name, description, price, image, category, stock, popular, delivery_time)
 WHERE NOT EXISTS (SELECT 1 FROM products LIMIT 1);
 
