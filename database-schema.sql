@@ -3,15 +3,39 @@
 
 -- Enable Row Level Security
 
--- Create custom types
-CREATE TYPE user_role AS ENUM ('user', 'admin');
-CREATE TYPE order_status AS ENUM ('pending', 'paid', 'processing', 'completed', 'cancelled');
-CREATE TYPE payment_status AS ENUM ('pending', 'paid', 'failed');
-CREATE TYPE payment_method AS ENUM ('qris', 'bank_transfer', 'e_wallet');
-CREATE TYPE product_category AS ENUM ('robux-login', 'robux-gamepass', 'items', 'passes', 'joki');
+-- Create custom types (with IF NOT EXISTS check)
+DO $$ BEGIN
+    CREATE TYPE user_role AS ENUM ('user', 'admin');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE order_status AS ENUM ('pending', 'paid', 'processing', 'completed', 'cancelled');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE payment_status AS ENUM ('pending', 'paid', 'failed');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE payment_method AS ENUM ('qris', 'bank_transfer', 'e_wallet');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE product_category AS ENUM ('robux-login', 'robux-gamepass', 'items', 'passes', 'joki');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Create products table
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
@@ -26,7 +50,7 @@ CREATE TABLE products (
 );
 
 -- Create orders table
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   total_amount DECIMAL(10,2) NOT NULL,
@@ -39,7 +63,7 @@ CREATE TABLE orders (
 );
 
 -- Create order_items table
-CREATE TABLE order_items (
+CREATE TABLE IF NOT EXISTS order_items (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
   product_id UUID REFERENCES products(id) ON DELETE CASCADE,
@@ -49,7 +73,7 @@ CREATE TABLE order_items (
 );
 
 -- Create wishlist table
-CREATE TABLE wishlist (
+CREATE TABLE IF NOT EXISTS wishlist (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   product_id UUID REFERENCES products(id) ON DELETE CASCADE,
@@ -58,7 +82,7 @@ CREATE TABLE wishlist (
 );
 
 -- Create user_profiles table (extends auth.users)
-CREATE TABLE user_profiles (
+CREATE TABLE IF NOT EXISTS user_profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   full_name VARCHAR(255),
   avatar_url VARCHAR(500),
@@ -69,13 +93,13 @@ CREATE TABLE user_profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create indexes for better performance
-CREATE INDEX idx_products_category ON products(category);
-CREATE INDEX idx_products_popular ON products(popular);
-CREATE INDEX idx_orders_user_id ON orders(user_id);
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_order_items_order_id ON order_items(order_id);
-CREATE INDEX idx_wishlist_user_id ON wishlist(user_id);
+-- Create indexes for better performance (IF NOT EXISTS)
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_products_popular ON products(popular);
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_wishlist_user_id ON wishlist(user_id);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
@@ -83,6 +107,27 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wishlist ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Products are viewable by everyone" ON products;
+DROP POLICY IF EXISTS "Products are insertable by admin" ON products;
+DROP POLICY IF EXISTS "Products are updatable by admin" ON products;
+DROP POLICY IF EXISTS "Products are deletable by admin" ON products;
+
+DROP POLICY IF EXISTS "Users can view their own orders" ON orders;
+DROP POLICY IF EXISTS "Users can insert their own orders" ON orders;
+DROP POLICY IF EXISTS "Users can update their own orders" ON orders;
+
+DROP POLICY IF EXISTS "Users can view their own order items" ON order_items;
+DROP POLICY IF EXISTS "Users can insert their own order items" ON order_items;
+
+DROP POLICY IF EXISTS "Users can view their own wishlist" ON wishlist;
+DROP POLICY IF EXISTS "Users can insert their own wishlist items" ON wishlist;
+DROP POLICY IF EXISTS "Users can delete their own wishlist items" ON wishlist;
+
+DROP POLICY IF EXISTS "Users can view their own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can update their own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can insert their own profile" ON user_profiles;
 
 -- RLS Policies for products (public read, admin write)
 CREATE POLICY "Products are viewable by everyone" ON products
@@ -178,6 +223,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Drop existing trigger if exists
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
 -- Trigger to create user profile on signup
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
@@ -192,22 +240,28 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop existing trigger if exists
+DROP TRIGGER IF EXISTS generate_order_number_trigger ON orders;
+
 -- Trigger to auto-generate order number
 CREATE TRIGGER generate_order_number_trigger
   BEFORE INSERT ON orders
   FOR EACH ROW
   EXECUTE FUNCTION generate_order_number();
 
--- Insert sample products
-INSERT INTO products (name, description, price, image, category, stock, popular, delivery_time) VALUES
-('Robux 100 (Via Login)', '100 Robux via login - Pengiriman instan ke akun Roblox Anda', 15000, 'https://via.placeholder.com/300x200/FF3B30/FFFFFF?text=100+Robux+Login', 'robux-login', 50, true, 'Instan'),
-('Robux 500 (Via Login)', '500 Robux via login - Pengiriman instan ke akun Roblox Anda', 75000, 'https://via.placeholder.com/300x200/007AFF/FFFFFF?text=500+Robux+Login', 'robux-login', 30, true, 'Instan'),
-('Robux 1000 (Via Login)', '1000 Robux via login - Pengiriman instan ke akun Roblox Anda', 150000, 'https://via.placeholder.com/300x200/34C759/FFFFFF?text=1000+Robux+Login', 'robux-login', 20, true, 'Instan'),
-('Robux 100 (Gamepass)', '100 Robux via gamepass - Delay 5 hari kerja', 12000, 'https://via.placeholder.com/300x200/FF3B30/FFFFFF?text=100+Robux+Gamepass', 'robux-gamepass', 100, false, '5 hari kerja'),
-('Joki Level 1-50', 'Joki leveling dari level 1 sampai 50 dengan joki profesional', 50000, 'https://via.placeholder.com/300x200/FFCC02/000000?text=Joki+Level+1-50', 'joki', 10, true, '1-2 hari');
+-- Insert sample products (only if table is empty)
+INSERT INTO products (name, description, price, image, category, stock, popular, delivery_time)
+SELECT * FROM (VALUES
+  ('Robux 100 (Via Login)', '100 Robux via login - Pengiriman instan ke akun Roblox Anda', 15000, 'https://via.placeholder.com/300x200/FF3B30/FFFFFF?text=100+Robux+Login', 'robux-login', 50, true, 'Instan'),
+  ('Robux 500 (Via Login)', '500 Robux via login - Pengiriman instan ke akun Roblox Anda', 75000, 'https://via.placeholder.com/300x200/007AFF/FFFFFF?text=500+Robux+Login', 'robux-login', 30, true, 'Instan'),
+  ('Robux 1000 (Via Login)', '1000 Robux via login - Pengiriman instan ke akun Roblox Anda', 150000, 'https://via.placeholder.com/300x200/34C759/FFFFFF?text=1000+Robux+Login', 'robux-login', 20, true, 'Instan'),
+  ('Robux 100 (Gamepass)', '100 Robux via gamepass - Delay 5 hari kerja', 12000, 'https://via.placeholder.com/300x200/FF3B30/FFFFFF?text=100+Robux+Gamepass', 'robux-gamepass', 100, false, '5 hari kerja'),
+  ('Joki Level 1-50', 'Joki leveling dari level 1 sampai 50 dengan joki profesional', 50000, 'https://via.placeholder.com/300x200/FFCC02/000000?text=Joki+Level+1-50', 'joki', 10, true, '1-2 hari')
+) AS v(name, description, price, image, category, stock, popular, delivery_time)
+WHERE NOT EXISTS (SELECT 1 FROM products LIMIT 1);
 
 -- Chat Support Tables
-CREATE TABLE chat_sessions (
+CREATE TABLE IF NOT EXISTS chat_sessions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
   customer_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -218,7 +272,7 @@ CREATE TABLE chat_sessions (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE chat_messages (
+CREATE TABLE IF NOT EXISTS chat_messages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   session_id UUID REFERENCES chat_sessions(id) ON DELETE CASCADE,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -230,14 +284,26 @@ CREATE TABLE chat_messages (
 );
 
 -- Indexes for chat tables
-CREATE INDEX idx_chat_sessions_customer_id ON chat_sessions(customer_id);
-CREATE INDEX idx_chat_sessions_order_id ON chat_sessions(order_id);
-CREATE INDEX idx_chat_messages_session_id ON chat_messages(session_id);
-CREATE INDEX idx_chat_messages_created_at ON chat_messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_customer_id ON chat_sessions(customer_id);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_order_id ON chat_sessions(order_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);
 
 -- RLS Policies for chat tables
 ALTER TABLE chat_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing chat policies if they exist
+DROP POLICY IF EXISTS "Users can view their own chat sessions" ON chat_sessions;
+DROP POLICY IF EXISTS "Admins can view all chat sessions" ON chat_sessions;
+DROP POLICY IF EXISTS "Users can create their own chat sessions" ON chat_sessions;
+DROP POLICY IF EXISTS "Admins can update chat sessions" ON chat_sessions;
+
+DROP POLICY IF EXISTS "Users can view messages in their sessions" ON chat_messages;
+DROP POLICY IF EXISTS "Admins can view all messages" ON chat_messages;
+DROP POLICY IF EXISTS "Users can create messages in their sessions" ON chat_messages;
+DROP POLICY IF EXISTS "Admins can create messages" ON chat_messages;
+DROP POLICY IF EXISTS "Admins can update messages" ON chat_messages;
 
 -- Chat sessions policies
 CREATE POLICY "Users can view their own chat sessions" ON chat_sessions
@@ -334,6 +400,9 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Drop existing trigger if exists
+DROP TRIGGER IF EXISTS chat_messages_update_session_timestamp ON chat_messages;
 
 CREATE TRIGGER chat_messages_update_session_timestamp
   AFTER INSERT ON chat_messages
