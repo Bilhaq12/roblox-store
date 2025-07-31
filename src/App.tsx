@@ -15,6 +15,7 @@ import Wishlist from './pages/Wishlist';
 import ProductDetail from './pages/ProductDetail';
 import Orders from './pages/Orders';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import AdminDashboard from './pages/Admin/Dashboard';
 import ProductManagement from './pages/Admin/ProductManagement';
 import ProductForm from './pages/Admin/ProductForm';
@@ -117,6 +118,7 @@ function App() {
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/order/:orderId" element={<OrderTracking />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
                 
                                      {/* Admin Routes */}
                      <Route path="/admin" element={<AdminDashboard />} />

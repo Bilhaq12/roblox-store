@@ -4,16 +4,14 @@ import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,22 +20,19 @@ const Login: React.FC = () => {
     setError('');
     setSuccess('');
 
+    if (!email || !password) {
+      setError('Email dan password harus diisi');
+      setLoading(false);
+      return;
+    }
+
     try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          setError(error.message);
-        } else {
-          setSuccess('Login berhasil!');
-          setTimeout(() => navigate('/'), 1000);
-        }
+      const { error } = await signIn(email, password);
+      if (error) {
+        setError(error.message || 'Gagal login');
       } else {
-        const { error } = await signUp(email, password, fullName);
-        if (error) {
-          setError(error.message);
-        } else {
-          setSuccess('Registrasi berhasil! Silakan cek email untuk verifikasi.');
-        }
+        setSuccess('Login berhasil!');
+        setTimeout(() => navigate('/'), 1000);
       }
     } catch (err) {
       setError('Terjadi kesalahan. Silakan coba lagi.');
@@ -52,13 +47,10 @@ const Login: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            {isLogin ? 'Masuk' : 'Daftar'}
+            Masuk
           </h1>
           <p className="text-gray-600">
-            {isLogin 
-              ? 'Masuk ke akun Roblox Store Anda' 
-              : 'Buat akun baru di Roblox Store'
-            }
+            Masuk ke akun Roblox Store Anda
           </p>
         </div>
 
@@ -76,25 +68,6 @@ const Login: React.FC = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nama Lengkap
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-roblox-red focus:border-transparent"
-                  placeholder="Masukkan nama lengkap"
-                  required={!isLogin}
-                />
-              </div>
-            </div>
-          )}
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Email
@@ -144,28 +117,24 @@ const Login: React.FC = () => {
             {loading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                {isLogin ? 'Memproses...' : 'Mendaftar...'}
+                Memproses...
               </div>
             ) : (
-              isLogin ? 'Masuk' : 'Daftar'
+              'Masuk'
             )}
           </button>
         </form>
 
-        {/* Toggle Login/Register */}
+        {/* Register Link */}
         <div className="mt-6 text-center">
           <p className="text-gray-600">
-            {isLogin ? 'Belum punya akun?' : 'Sudah punya akun?'}
-            <button
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError('');
-                setSuccess('');
-              }}
-              className="ml-1 text-roblox-red hover:text-red-700 font-semibold"
+            Belum punya akun?{' '}
+            <Link
+              to="/register"
+              className="text-roblox-red hover:text-red-700 font-semibold"
             >
-              {isLogin ? 'Daftar' : 'Masuk'}
-            </button>
+              Daftar
+            </Link>
           </p>
         </div>
 

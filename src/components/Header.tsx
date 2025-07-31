@@ -126,10 +126,15 @@ const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                 )}
               </div>
             ) : (
-              <Link to="/login" className="flex items-center space-x-2 hover:text-roblox-yellow transition-colors">
-                <User className="w-6 h-6" />
-                <span className="hidden md:block text-sm">Masuk</span>
-              </Link>
+              <div className="flex items-center space-x-2">
+                <Link to="/login" className="hover:text-roblox-yellow transition-colors text-sm">
+                  Masuk
+                </Link>
+                <span className="text-gray-400">|</span>
+                <Link to="/register" className="hover:text-roblox-yellow transition-colors text-sm">
+                  Daftar
+                </Link>
+              </div>
             )}
             
             <button className="md:hidden">
