@@ -101,12 +101,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (profileError) {
             console.error('❌ Profile creation error:', profileError)
             
-            // Jika gagal, coba panggil function manual
-            console.log('📡 Trying manual function...')
-            const { error: functionError } = await supabase.rpc('create_user_profile_manual', {
-              user_id: data.user.id,
-              user_full_name: fullName
-            })
+                         // Jika gagal, coba panggil function manual
+             console.log('📡 Trying manual function...')
+             const { error: functionError } = await supabase.rpc('create_user_profile_simple', {
+               user_id: data.user.id,
+               user_full_name: fullName
+             })
             
             if (functionError) {
               console.error('❌ Manual function error:', functionError)
