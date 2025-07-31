@@ -60,17 +60,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          role: 'user',
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            role: 'user',
+          },
         },
-      },
-    })
-    return { error }
+      })
+      
+      if (error) {
+        console.error('SignUp error:', error)
+        return { error }
+      }
+      
+      // Jika signup berhasil, coba buat user profile manual
+      if (data.user) {
+        try {
+          const { error: profileError } = await supabase
+            .from('user_profiles')
+            .insert({
+              id: data.user.id,
+              full_name: fullName,
+              role: 'user'
+            })
+          
+          if (profileError) {
+            console.error('Profile creation error:', profileError)
+            // Jangan return error karena user sudah terbuat
+          }
+        } catch (profileErr) {
+          console.error('Profile creation exception:', profileErr)
+        }
+      }
+      
+      return { error: null }
+    } catch (err) {
+      console.error('SignUp exception:', err)
+      return { error: { message: 'Database error saving new user' } }
+    }
   }
 
   const signOut = async () => {
