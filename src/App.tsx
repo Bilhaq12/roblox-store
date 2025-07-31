@@ -19,9 +19,11 @@ import AdminDashboard from './pages/Admin/Dashboard';
 import ProductManagement from './pages/Admin/ProductManagement';
 import ProductForm from './pages/Admin/ProductForm';
 import AdminPanel from './pages/AdminPanel';
+import AdminChat from './pages/AdminChat';
 import OrderTracking from './pages/OrderTracking';
 import { Product } from './lib/supabase';
 import useLocalStorage from './hooks/useLocalStorage';
+import ChatButton from './components/ChatButton';
 
 interface CartItem {
   product: Product;
@@ -95,6 +97,7 @@ function App() {
           <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300">
             <Header cartCount={cartCount} />
             <main className="flex-1">
+              <ChatButton />
               <Routes>
                 <Route path="/" element={<Home onAddToCart={addToCart} />} />
                 <Route path="/products" element={<Products onAddToCart={addToCart} />} />
@@ -115,12 +118,13 @@ function App() {
                 <Route path="/order/:orderId" element={<OrderTracking />} />
                 <Route path="/login" element={<Login />} />
                 
-                {/* Admin Routes */}
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/panel" element={<AdminPanel />} />
-                <Route path="/admin/products" element={<ProductManagement />} />
-                <Route path="/admin/products/new" element={<ProductForm />} />
-                <Route path="/admin/products/:id/edit" element={<ProductForm />} />
+                                     {/* Admin Routes */}
+                     <Route path="/admin" element={<AdminDashboard />} />
+                     <Route path="/admin/panel" element={<AdminPanel />} />
+                     <Route path="/admin/chat" element={<AdminChat />} />
+                     <Route path="/admin/products" element={<ProductManagement />} />
+                     <Route path="/admin/products/new" element={<ProductForm />} />
+                     <Route path="/admin/products/:id/edit" element={<ProductForm />} />
               </Routes>
             </main>
             <Footer />

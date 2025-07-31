@@ -204,4 +204,138 @@ INSERT INTO products (name, description, price, image, category, stock, popular,
 ('Robux 500 (Via Login)', '500 Robux via login - Pengiriman instan ke akun Roblox Anda', 75000, 'https://via.placeholder.com/300x200/007AFF/FFFFFF?text=500+Robux+Login', 'robux-login', 30, true, 'Instan'),
 ('Robux 1000 (Via Login)', '1000 Robux via login - Pengiriman instan ke akun Roblox Anda', 150000, 'https://via.placeholder.com/300x200/34C759/FFFFFF?text=1000+Robux+Login', 'robux-login', 20, true, 'Instan'),
 ('Robux 100 (Gamepass)', '100 Robux via gamepass - Delay 5 hari kerja', 12000, 'https://via.placeholder.com/300x200/FF3B30/FFFFFF?text=100+Robux+Gamepass', 'robux-gamepass', 100, false, '5 hari kerja'),
-('Joki Level 1-50', 'Joki leveling dari level 1 sampai 50 dengan joki profesional', 50000, 'https://via.placeholder.com/300x200/FFCC02/000000?text=Joki+Level+1-50', 'joki', 10, true, '1-2 hari'); 
+('Joki Level 1-50', 'Joki leveling dari level 1 sampai 50 dengan joki profesional', 50000, 'https://via.placeholder.com/300x200/FFCC02/000000?text=Joki+Level+1-50', 'joki', 10, true, '1-2 hari');
+
+-- Chat Support Tables
+CREATE TABLE chat_sessions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+  customer_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  customer_name TEXT NOT NULL,
+  customer_email TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE chat_messages (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id UUID REFERENCES chat_sessions(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_name TEXT NOT NULL,
+  message TEXT NOT NULL,
+  is_admin BOOLEAN DEFAULT false,
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for chat tables
+CREATE INDEX idx_chat_sessions_customer_id ON chat_sessions(customer_id);
+CREATE INDEX idx_chat_sessions_order_id ON chat_sessions(order_id);
+CREATE INDEX idx_chat_messages_session_id ON chat_messages(session_id);
+CREATE INDEX idx_chat_messages_created_at ON chat_messages(created_at);
+
+-- RLS Policies for chat tables
+ALTER TABLE chat_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
+
+-- Chat sessions policies
+CREATE POLICY "Users can view their own chat sessions" ON chat_sessions
+  FOR SELECT USING (auth.uid() = customer_id);
+
+CREATE POLICY "Admins can view all chat sessions" ON chat_sessions
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM auth.users 
+      WHERE id = auth.uid() 
+      AND raw_user_meta_data->>'role' = 'admin'
+    )
+  );
+
+CREATE POLICY "Users can create their own chat sessions" ON chat_sessions
+  FOR INSERT WITH CHECK (auth.uid() = customer_id);
+
+CREATE POLICY "Admins can update chat sessions" ON chat_sessions
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM auth.users 
+      WHERE id = auth.uid() 
+      AND raw_user_meta_data->>'role' = 'admin'
+    )
+  );
+
+-- Chat messages policies
+CREATE POLICY "Users can view messages in their sessions" ON chat_messages
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM chat_sessions 
+      WHERE id = session_id 
+      AND customer_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Admins can view all messages" ON chat_messages
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM auth.users 
+      WHERE id = auth.uid() 
+      AND raw_user_meta_data->>'role' = 'admin'
+    )
+  );
+
+CREATE POLICY "Users can create messages in their sessions" ON chat_messages
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM chat_sessions 
+      WHERE id = session_id 
+      AND customer_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Admins can create messages" ON chat_messages
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM auth.users 
+      WHERE id = auth.uid() 
+      AND raw_user_meta_data->>'role' = 'admin'
+    )
+  );
+
+CREATE POLICY "Admins can update messages" ON chat_messages
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM auth.users 
+      WHERE id = auth.uid() 
+      AND raw_user_meta_data->>'role' = 'admin'
+    )
+  );
+
+-- Functions for chat
+CREATE OR REPLACE FUNCTION get_unread_message_count(session_id UUID)
+RETURNS INTEGER AS $$
+BEGIN
+  RETURN (
+    SELECT COUNT(*) 
+    FROM chat_messages 
+    WHERE chat_messages.session_id = get_unread_message_count.session_id 
+    AND is_read = false 
+    AND is_admin = false
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Triggers for chat
+CREATE OR REPLACE FUNCTION update_chat_session_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE chat_sessions 
+  SET updated_at = NOW() 
+  WHERE id = NEW.session_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER chat_messages_update_session_timestamp
+  AFTER INSERT ON chat_messages
+  FOR EACH ROW
+  EXECUTE FUNCTION update_chat_session_timestamp(); 

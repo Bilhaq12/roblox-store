@@ -95,18 +95,25 @@ const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                     >
                       Wishlist
                     </Link>
-                    {user.user_metadata?.role === 'admin' && (
-                      <>
-                        <hr className="my-2" />
-                        <Link
-                          to="/admin/panel"
-                          className="block px-4 py-2 text-blue-600 hover:bg-blue-50 font-medium"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          🔧 Admin Panel
-                        </Link>
-                      </>
-                    )}
+                                         {user.user_metadata?.role === 'admin' && (
+                       <>
+                         <hr className="my-2" />
+                         <Link
+                           to="/admin/panel"
+                           className="block px-4 py-2 text-blue-600 hover:bg-blue-50 font-medium"
+                           onClick={() => setShowUserMenu(false)}
+                         >
+                           🔧 Admin Panel
+                         </Link>
+                         <Link
+                           to="/admin/chat"
+                           className="block px-4 py-2 text-green-600 hover:bg-green-50 font-medium"
+                           onClick={() => setShowUserMenu(false)}
+                         >
+                           💬 Admin Chat
+                         </Link>
+                       </>
+                     )}
                     <hr className="my-2" />
                     <button
                       onClick={handleSignOut}
