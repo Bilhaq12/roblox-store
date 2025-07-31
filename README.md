@@ -172,9 +172,9 @@ Proyek ini dilisensikan di bawah MIT License - lihat file [LICENSE](LICENSE) unt
 
 ## 📞 Kontak
 
-- **Email**: support@robloxstore.id
-- **WhatsApp**: +62 812-3456-7890
-- **Website**: https://robloxstore.id
+- **Email**: iboysgntg@gmail.com
+- **WhatsApp**: +62 878-8467-7157
+- **Website**: -
 
 ## 🙏 Ucapan Terima Kasih
 
