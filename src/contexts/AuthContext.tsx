@@ -83,48 +83,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       console.log('✅ Auth signup successful, user:', data.user?.id)
-      
-      // Jika signup berhasil, coba buat user profile manual
-      // COMMENT OUT UNTUK TESTING - UNCOMMENT SETELAH BERHASIL
-      /*
-      if (data.user) {
-        try {
-          console.log('📡 Creating user profile...')
-          
-          // Coba insert langsung ke user_profiles
-          const { error: profileError } = await supabase
-            .from('user_profiles')
-            .insert({
-              id: data.user.id,
-              full_name: fullName,
-              role: 'user'
-            })
-          
-          if (profileError) {
-            console.error('❌ Profile creation error:', profileError)
-            
-            // Jika gagal, coba panggil function manual
-            console.log('📡 Trying manual function...')
-            const { error: functionError } = await supabase.rpc('create_user_profile_safe', {
-              user_id: data.user.id,
-              user_full_name: fullName
-            })
-            
-            if (functionError) {
-              console.error('❌ Manual function error:', functionError)
-            } else {
-              console.log('✅ User profile created via manual function')
-            }
-          } else {
-            console.log('✅ User profile created successfully')
-          }
-        } catch (profileErr) {
-          console.error('❌ Profile creation exception:', profileErr)
-        }
-      }
-      */
-      
       console.log('✅ Signup process completed successfully')
+      
       return { error: null }
     } catch (err) {
       console.error('❌ SignUp exception:', err)

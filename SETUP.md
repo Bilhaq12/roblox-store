@@ -1,108 +1,86 @@
-# 🚀 Setup Instructions - Roblox Store
+# Setup Roblox Store
 
-## 🔧 Konfigurasi Supabase (Wajib untuk Login)
+## Langkah 1: Setup Supabase
 
-### 1. Buat Project Supabase
-1. Kunjungi [https://supabase.com](https://supabase.com)
-2. Sign up/Login dengan akun Anda
+### 1.1 Buat Project Supabase
+1. Buka [supabase.com](https://supabase.com)
+2. Login atau Sign Up
 3. Klik "New Project"
-4. Pilih organization dan beri nama project (misal: "roblox-store")
-5. Masukkan database password
-6. Pilih region terdekat (misal: Southeast Asia)
-7. Klik "Create new project"
+4. Pilih organization
+5. Isi nama project: "roblox-store"
+6. Pilih database password (simpan!)
+7. Pilih region terdekat
+8. Klik "Create new project"
 
-### 2. Dapatkan Kredensial API
-1. Setelah project dibuat, buka project
-2. Klik menu "Settings" (icon gear) di sidebar kiri
-3. Pilih "API"
-4. Copy **Project URL** dan **anon public** key
+### 1.2 Dapatkan Kredensial
+1. Di dashboard Supabase, klik **Settings** (icon gear)
+2. Klik **API**
+3. Copy **Project URL** dan **anon public** key
 
-### 3. Buat File Environment
-1. Di root folder project, buat file `.env`
-2. Isi dengan kredensial Supabase:
+### 1.3 Buat File .env
+Buat file `.env` di folder `jualan-roblox`:
 
 ```env
 REACT_APP_SUPABASE_URL=https://your-project-id.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
-### 4. Setup Database Schema
-1. Di Supabase dashboard, klik "SQL Editor" di sidebar
-2. Klik "New query"
-3. Copy seluruh isi file `database-schema.sql`
-4. Paste ke SQL editor dan klik "Run"
+Ganti dengan kredensial asli dari Langkah 1.2.
 
-### 5. Test Login
-1. Restart development server: `npm start`
-2. Buka http://localhost:3000
-3. Coba register/login - seharusnya sudah berfungsi
+### 1.4 Setup Database
+1. Di Supabase Dashboard, klik **SQL Editor**
+2. Copy seluruh isi file `database-clean.sql`
+3. Paste dan klik **Run**
 
-## 💳 Sistem Pembayaran Manual
+## Langkah 2: Install Dependencies
 
-### Fitur yang Sudah Diperbaiki:
-- ✅ **Menghapus pembayaran otomatis** - Tidak ada lagi timer 10 detik
-- ✅ **Manual confirmation** - Admin harus konfirmasi pembayaran
-- ✅ **Demo button** - Tombol "Admin: Konfirmasi Pembayaran" untuk testing
-- ✅ **Pesan warning** - Memberitahu user bahwa pembayaran manual
+```bash
+npm install
+```
 
-### Cara Kerja:
-1. User scan QRIS dan transfer
-2. Status tetap "Menunggu Pembayaran"
-3. Admin cek transfer di rekening
-4. Admin klik tombol "Konfirmasi Pembayaran"
-5. Status berubah menjadi "Berhasil"
+## Langkah 3: Jalankan Development Server
 
-## 🐛 Troubleshooting
+```bash
+npm start
+```
 
-### Login Error
-**Gejala**: Error saat login/register
-**Solusi**:
-1. Pastikan file `.env` sudah dibuat dengan benar
-2. Pastikan kredensial Supabase sudah benar
-3. Restart development server setelah edit `.env`
-4. Cek browser console untuk error detail
+## Langkah 4: Test
 
-### Payment Auto Success
-**Gejala**: Pembayaran otomatis berhasil tanpa transfer
-**Solusi**: ✅ Sudah diperbaiki - pembayaran sekarang manual
+1. Buka browser ke `http://localhost:3000`
+2. Klik "Daftar" di header
+3. Isi form pendaftaran
+4. Cek console browser untuk log detail
 
-### Database Error
-**Gejala**: Error saat akses data
-**Solusi**:
-1. Pastikan SQL schema sudah dijalankan di Supabase
-2. Cek tabel sudah terbuat di Supabase dashboard
-3. Pastikan Row Level Security (RLS) sudah dikonfigurasi
+## Troubleshooting
 
-## 📱 Fitur Baru
+### Error "Database error saving new user"
+- Pastikan file `.env` sudah benar
+- Pastikan database schema sudah dijalankan
+- Cek console browser untuk error detail
 
-### Dark Mode
-- Toggle tema gelap/terang
-- Tersimpan di localStorage
-- Transisi smooth
+### Error "Invalid API key"
+- Pastikan anon key sudah benar
+- Pastikan project URL sudah benar
 
-### Checkout Forms
-- Form untuk Nick Roblox
-- Form Password (jika VIP/Login atau Joki)
-- Form Nomor WhatsApp
-- Validasi client-side
+### Error "Table not found"
+- Jalankan database schema di SQL Editor
+- Pastikan semua tabel terbuat
 
-### User Authentication
-- Register dengan email/password
-- Login dengan email/password
-- Profile management
-- Session persistence
+## File Penting
 
-## 🔒 Security Notes
+- `database-clean.sql` - Database schema yang bersih
+- `.env` - Environment variables
+- `src/contexts/AuthContext.tsx` - Authentication logic
+- `src/lib/supabase.ts` - Supabase client
 
-- Jangan commit file `.env` ke git
-- Gunakan environment variables untuk kredensial
-- Implementasi Row Level Security di Supabase
-- Validasi input di client dan server
+## Fitur yang Tersedia
 
-## 📞 Support
-
-Jika masih ada masalah:
-1. Cek browser console untuk error
-2. Pastikan semua langkah setup sudah benar
-3. Restart development server
-4. Clear browser cache 
+- ✅ User authentication (login/register)
+- ✅ Product listing
+- ✅ Shopping cart
+- ✅ QRIS payment
+- ✅ Order management
+- ✅ Admin panel
+- ✅ Chat support
+- ✅ Dark mode
+- ✅ Responsive design 
