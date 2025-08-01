@@ -20,10 +20,9 @@ export interface Product {
   name: string
   description: string
   price: number
-  image: string
+  images: string[]
   category: 'robux-login' | 'robux-gamepass' | 'items' | 'passes' | 'joki'
   stock: number
-  popular?: boolean
   delivery_time?: string
   created_at: string
   updated_at: string

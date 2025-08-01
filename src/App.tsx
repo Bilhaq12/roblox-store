@@ -5,6 +5,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Notification from './components/Notification';
+import AdminRoute from './components/AdminRoute';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import Cart from './pages/Cart';
@@ -121,12 +122,36 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 
                                      {/* Admin Routes */}
-                     <Route path="/admin" element={<AdminDashboard />} />
-                     <Route path="/admin/panel" element={<AdminPanel />} />
-                     <Route path="/admin/chat" element={<AdminChat />} />
-                     <Route path="/admin/products" element={<ProductManagement />} />
-                     <Route path="/admin/products/new" element={<ProductForm />} />
-                     <Route path="/admin/products/:id/edit" element={<ProductForm />} />
+                     <Route path="/admin" element={
+                       <AdminRoute>
+                         <AdminDashboard />
+                       </AdminRoute>
+                     } />
+                     <Route path="/admin/panel" element={
+                       <AdminRoute>
+                         <AdminPanel />
+                       </AdminRoute>
+                     } />
+                     <Route path="/admin/chat" element={
+                       <AdminRoute>
+                         <AdminChat />
+                       </AdminRoute>
+                     } />
+                     <Route path="/admin/products" element={
+                       <AdminRoute>
+                         <ProductManagement />
+                       </AdminRoute>
+                     } />
+                     <Route path="/admin/products/new" element={
+                       <AdminRoute>
+                         <ProductForm />
+                       </AdminRoute>
+                     } />
+                     <Route path="/admin/products/:id/edit" element={
+                       <AdminRoute>
+                         <ProductForm />
+                       </AdminRoute>
+                     } />
               </Routes>
             </main>
             <Footer />

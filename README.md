@@ -41,7 +41,7 @@ Website jualan item Roblox dengan pembayaran QRIS yang aman dan mudah. Dibangun 
 3. **Setup Supabase**
    - Buat project baru di [Supabase](https://supabase.com)
    - Copy project URL dan anon key dari Settings > API
-   - Jalankan SQL schema dari `database-schema.sql` di SQL editor Supabase
+   - Jalankan SQL schema dari `database-reset.sql` di SQL editor Supabase
    - Update file `.env` dengan kredensial Anda
 
 4. **Install dependencies**
@@ -74,8 +74,8 @@ src/
 │   ├── Cart.tsx        # Halaman keranjang belanja
 │   ├── About.tsx       # Halaman tentang kami
 │   └── Contact.tsx     # Halaman kontak
-├── data/               # Data statis aplikasi
-│   └── products.ts     # Data produk Roblox
+├── services/           # API services
+│   └── api.ts          # Supabase API functions
 ├── App.tsx             # Komponen utama aplikasi
 └── index.tsx           # Entry point aplikasi
 ```
@@ -126,23 +126,7 @@ colors: {
 ```
 
 ### Data Produk
-Produk dapat ditambah/edit di `src/data/products.ts`:
-
-```typescript
-export const products: Product[] = [
-  {
-    id: '1',
-    name: 'Robux 100',
-    description: '100 Robux untuk game Roblox Anda',
-    price: 15000,
-    image: 'image-url',
-    category: 'robux',
-    stock: 50,
-    popular: true
-  }
-  // ... produk lainnya
-];
-```
+Produk dapat ditambah/edit melalui Admin Panel atau langsung di database Supabase. Sample data sudah tersedia di `database-reset.sql`.
 
 ## 🔧 Scripts
 

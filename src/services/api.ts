@@ -14,13 +14,13 @@ export const productService = {
     return data || [];
   },
 
-  // Get popular products
+  // Get popular products (first 6 products)
   async getPopular(): Promise<Product[]> {
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .eq('popular', true)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(6);
 
     if (error) throw error;
     return data || [];
@@ -227,6 +227,32 @@ export const userService = {
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
+      .single();
+
+    if (error) {
+      // If profile doesn't exist, return null instead of throwing error
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw error;
+    }
+    return data;
+  },
+
+  // Create user profile
+  async createProfile(profileData: {
+    id: string;
+    full_name: string;
+    role?: 'user' | 'admin';
+  }): Promise<any> {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .insert({
+        id: profileData.id,
+        full_name: profileData.full_name,
+        role: profileData.role || 'user'
+      })
+      .select()
       .single();
 
     if (error) throw error;

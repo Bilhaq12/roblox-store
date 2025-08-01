@@ -1,39 +1,24 @@
--- Database Schema untuk Roblox Store
+-- Database Reset Script untuk Roblox Store
 -- Jalankan script ini di Supabase SQL Editor
 
--- 1. Buat ENUM types
-DO $$ BEGIN
-    CREATE TYPE user_role AS ENUM ('user', 'admin');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+-- 1. Reset database dengan force
+BEGIN;
 
-DO $$ BEGIN
-    CREATE TYPE order_status AS ENUM ('pending', 'processing', 'completed', 'cancelled');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+-- Drop semua yang ada dengan force
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO public;
 
-DO $$ BEGIN
-    CREATE TYPE payment_status AS ENUM ('pending', 'paid', 'failed');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+-- 2. Buat ENUM types baru
+CREATE TYPE user_role AS ENUM ('user', 'admin');
+CREATE TYPE order_status AS ENUM ('pending', 'processing', 'completed', 'cancelled');
+CREATE TYPE payment_status AS ENUM ('pending', 'paid', 'failed');
+CREATE TYPE payment_method AS ENUM ('qris', 'bank_transfer', 'e_wallet');
+CREATE TYPE product_category AS ENUM ('robux_login', 'robux_gamepass', 'limited_items', 'game_passes', 'joki_services');
 
-DO $$ BEGIN
-    CREATE TYPE payment_method AS ENUM ('qris', 'bank_transfer', 'e_wallet');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE product_category AS ENUM ('robux_login', 'robux_gamepass', 'limited_items', 'game_passes', 'joki_services');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
--- 2. Buat tabel products
-CREATE TABLE IF NOT EXISTS products (
+-- 3. Buat tabel products
+CREATE TABLE products (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -47,8 +32,8 @@ CREATE TABLE IF NOT EXISTS products (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 3. Buat tabel user_profiles (tanpa foreign key dulu)
-CREATE TABLE IF NOT EXISTS user_profiles (
+-- 4. Buat tabel user_profiles
+CREATE TABLE user_profiles (
     id UUID PRIMARY KEY,
     full_name TEXT NOT NULL,
     role user_role DEFAULT 'user',
@@ -56,8 +41,11 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 4. Buat tabel orders
-CREATE TABLE IF NOT EXISTS orders (
+-- 5. Buat sequence untuk order number
+CREATE SEQUENCE order_number_seq START 1;
+
+-- 6. Buat tabel orders
+CREATE TABLE orders (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL,
     order_number VARCHAR(50) UNIQUE NOT NULL,
@@ -73,8 +61,8 @@ CREATE TABLE IF NOT EXISTS orders (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 5. Buat tabel order_items
-CREATE TABLE IF NOT EXISTS order_items (
+-- 7. Buat tabel order_items
+CREATE TABLE order_items (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id),
@@ -83,8 +71,8 @@ CREATE TABLE IF NOT EXISTS order_items (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 6. Buat tabel wishlist
-CREATE TABLE IF NOT EXISTS wishlist (
+-- 8. Buat tabel wishlist
+CREATE TABLE wishlist (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL,
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -92,8 +80,8 @@ CREATE TABLE IF NOT EXISTS wishlist (
     UNIQUE(user_id, product_id)
 );
 
--- 7. Buat tabel chat_sessions
-CREATE TABLE IF NOT EXISTS chat_sessions (
+-- 9. Buat tabel chat_sessions
+CREATE TABLE chat_sessions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL,
     order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
@@ -102,8 +90,8 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 8. Buat tabel chat_messages
-CREATE TABLE IF NOT EXISTS chat_messages (
+-- 10. Buat tabel chat_messages
+CREATE TABLE chat_messages (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     session_id UUID NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
     user_id UUID NOT NULL,
@@ -112,17 +100,17 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 9. Buat indexes
-CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
-CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active);
-CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
-CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
-CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
-CREATE INDEX IF NOT EXISTS idx_wishlist_user_id ON wishlist(user_id);
-CREATE INDEX IF NOT EXISTS idx_chat_sessions_user_id ON chat_sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id);
+-- 11. Buat indexes
+CREATE INDEX idx_products_category ON products(category);
+CREATE INDEX idx_products_active ON products(is_active);
+CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_wishlist_user_id ON wishlist(user_id);
+CREATE INDEX idx_chat_sessions_user_id ON chat_sessions(user_id);
+CREATE INDEX idx_chat_messages_session_id ON chat_messages(session_id);
 
--- 10. Buat function untuk generate order number
+-- 12. Buat function untuk generate order number
 CREATE OR REPLACE FUNCTION generate_order_number()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -131,17 +119,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 11. Buat sequence untuk order number
-CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1;
-
--- 12. Buat trigger untuk order number
-DROP TRIGGER IF EXISTS trigger_generate_order_number ON orders;
+-- 13. Buat trigger untuk order number
 CREATE TRIGGER trigger_generate_order_number
     BEFORE INSERT ON orders
     FOR EACH ROW
     EXECUTE FUNCTION generate_order_number();
 
--- 13. Buat function untuk handle new user (tanpa foreign key)
+-- 14. Buat function untuk handle new user
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -159,13 +143,12 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 14. Buat trigger untuk new user
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+-- 15. Buat trigger untuk new user
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
--- 15. Setup RLS (Row Level Security)
+-- 16. Setup RLS (Row Level Security)
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
@@ -174,7 +157,7 @@ ALTER TABLE wishlist ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
 
--- 16. Buat RLS policies
+-- 17. Buat RLS policies
 -- Products: semua orang bisa lihat
 CREATE POLICY "Products are viewable by everyone" ON products
     FOR SELECT USING (true);
@@ -248,7 +231,7 @@ CREATE POLICY "Users can insert own chat messages" ON chat_messages
         )
     );
 
--- 17. Insert sample products
+-- 18. Insert sample products
 INSERT INTO products (name, description, price, category, image_url, stock, delivery_time) VALUES
 ('Robux 100 via Login', 'Robux 100 dengan metode login akun', 15000.00, 'robux_login', '/images/robux-100.jpg', 100, '5-10 menit'),
 ('Robux 500 via Login', 'Robux 500 dengan metode login akun', 75000.00, 'robux_login', '/images/robux-500.jpg', 50, '5-10 menit'),
@@ -261,10 +244,12 @@ INSERT INTO products (name, description, price, category, image_url, stock, deli
 ('Game Pass: VIP Access', 'Game pass untuk akses VIP', 25000.00, 'game_passes', '/images/vip-pass.jpg', 50, '10-15 menit'),
 ('Game Pass: Premium Features', 'Game pass untuk fitur premium', 50000.00, 'game_passes', '/images/premium-pass.jpg', 30, '10-15 menit'),
 ('Joki Level 1-50', 'Joki leveling dari level 1 ke 50', 100000.00, 'joki_services', '/images/joki-1-50.jpg', 20, '1-2 hari'),
-('Joki Level 1-100', 'Joki leveling dari level 1 ke 100', 200000.00, 'joki_services', '/images/joki-1-100.jpg', 10, '2-3 hari')
-ON CONFLICT DO NOTHING;
+('Joki Level 1-100', 'Joki leveling dari level 1 ke 100', 200000.00, 'joki_services', '/images/joki-1-100.jpg', 10, '2-3 hari');
 
--- 18. Cek hasil
-SELECT 'Database setup completed successfully!' as status;
+COMMIT;
+
+-- 19. Cek hasil
+SELECT 'Database reset completed successfully!' as status;
 SELECT COUNT(*) as products_count FROM products;
-SELECT COUNT(*) as user_profiles_count FROM user_profiles; 
+SELECT COUNT(*) as user_profiles_count FROM user_profiles;
+SELECT DISTINCT category FROM products; 
